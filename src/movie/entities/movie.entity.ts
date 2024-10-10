@@ -1,15 +1,29 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  VersionColumn,
+} from 'typeorm';
 
+@Entity()
 export class Movie {
-  @IsNotEmpty()
-  @IsNumber()
+  @PrimaryGeneratedColumn()
   id: number;
 
-  @IsNotEmpty()
-  @IsString()
+  @Column()
   title: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @Column()
   genre: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @VersionColumn()
+  version: number;
 }
