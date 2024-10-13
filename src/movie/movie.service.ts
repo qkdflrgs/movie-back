@@ -3,19 +3,31 @@ import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { Movie } from './entities/movie.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
+import { MovieDetail } from './entities/movie-detail.entity';
 
 @Injectable()
 export class MovieService {
   constructor(
     @InjectRepository(Movie)
     private readonly movieRepository: Repository<Movie>,
+    @InjectRepository(MovieDetail)
+    private readonly movieDetailRepository: Repository<MovieDetail>,
   ) {}
 
   getManyMovies(title?: string) {
-    // to do: title 필터 기능 추가하기
+    if (!title) {
+      return this.movieRepository.find({
+        relations: ['detail'],
+      });
+    }
 
-    return this.movieRepository.find();
+    return this.movieRepository.find({
+      where: {
+        title: Like(`&${title}%`),
+      },
+      relations: ['detail'],
+    });
   }
 
   async getMovieById(id: number) {
@@ -23,6 +35,7 @@ export class MovieService {
       where: {
         id,
       },
+      relations: ['detail'],
     });
 
     if (!movie) {
@@ -33,28 +46,47 @@ export class MovieService {
   }
 
   async createMovie(createMovieDto: CreateMovieDto) {
-    const movie = await this.movieRepository.save(createMovieDto);
+    const movieDetail = await this.movieDetailRepository.save({
+      detail: createMovieDto.detail,
+    });
+
+    const movie = await this.movieRepository.save({
+      title: createMovieDto.title,
+      genre: createMovieDto.genre,
+      detail: movieDetail,
+    });
 
     return movie;
   }
 
   async updateMovie(id: number, updateMovieDto: UpdateMovieDto) {
-    const movie = this.movieRepository.findOne({
+    const movie = await this.movieRepository.findOne({
       where: {
         id,
       },
+      relations: ['detail'],
     });
 
     if (!movie) {
       throw new NotFoundException('존재하지 않는 영화입니다.');
     }
 
-    this.movieRepository.update({ id }, updateMovieDto);
+    const { detail, ...movieRest } = updateMovieDto;
+
+    await this.movieRepository.update({ id }, movieRest);
+
+    if (detail) {
+      await this.movieDetailRepository.update(
+        { id: movie.detail.id },
+        { detail },
+      );
+    }
 
     const updatedMovie = await this.movieRepository.findOne({
       where: {
         id,
       },
+      relations: ['detail'],
     });
 
     return updatedMovie;
@@ -65,6 +97,7 @@ export class MovieService {
       where: {
         id,
       },
+      relations: ['detail'],
     });
 
     if (!movie) {
@@ -72,6 +105,7 @@ export class MovieService {
     }
 
     await this.movieRepository.delete(id);
+    await this.movieDetailRepository.delete(movie.detail.id);
 
     return id;
   }
