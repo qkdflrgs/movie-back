@@ -10,4 +10,8 @@ export class UpdateMovieDto extends PartialType(CreateMovieDto) {
   @IsNotEmpty()
   @IsOptional()
   genre?: string;
+
+  @IsNotEmpty()
+  @IsOptional()
+  detail?: string;
 }
