@@ -1,29 +1,42 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
-  VersionColumn,
 } from 'typeorm';
+import { Metadata } from '../../common/entities/metadata.entity';
+import { MovieDetail } from './movie-detail.entity';
+import { Director } from 'src/director/entities/director.entity';
+import { Genre } from 'src/genre/entities/genre.entity';
 
 @Entity()
-export class Movie {
+export class Movie extends Metadata {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({
+    unique: true,
+  })
   title: string;
 
-  @Column()
-  genre: string;
+  @ManyToMany(() => Genre, (genre) => genre.movies)
+  @JoinTable()
+  genres: Genre[];
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @OneToOne(() => MovieDetail, (movieDetail) => movieDetail.id, {
+    cascade: true,
+    nullable: false,
+  })
+  @JoinColumn()
+  detail: MovieDetail;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  @VersionColumn()
-  version: number;
+  @ManyToOne(() => Director, (director) => director.id, {
+    cascade: true,
+    nullable: false,
+  })
+  director: Director;
 }
